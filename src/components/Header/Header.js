@@ -68,6 +68,9 @@ const useStyles = makeStyles((theme) => ({
       display: "block",
     },
   },
+  hiden: {
+    display: "none",
+  },
   burger_menu: {
     display: "flex",
     justifyContent: "space-around",
@@ -124,6 +127,8 @@ const useStyles = makeStyles((theme) => ({
     textDecoration: "none",
     cursor: "pointer",
     padding: "10px 20px",
+    display: "flex",
+    alignItems: "center",
   },
   mint_link: {
     fontWeight: 500,
@@ -215,6 +220,7 @@ const Header = (props) => {
   const { isConnected, defaultAccount, chainid, accountInfo } = useSelector(getData);
   const [burgButton, setBurgButton] = useState(false);
   const [knownchain, setKnownchain] = useState('/img/empty.png');
+  const [basetoken, setBasetoken] = useState('TRX');
 
 
   const closeBurger = () => {
@@ -245,6 +251,12 @@ const Header = (props) => {
         setKnownchain('/img/ethereum_test.png')
       } else if (chainid == 137) { 
         setKnownchain('/img/networks/polygon.png')
+      } else if (chainid == 8453) { 
+        setKnownchain('/img/networks/base.png')
+        setBasetoken('ETH')
+      } else if (chainid == 84532) { 
+        setKnownchain('/img/networks/base_test.png')
+        setBasetoken('ETH')
       } else {
         setKnownchain('/img/empty.png')
       }
@@ -270,6 +282,9 @@ const Header = (props) => {
         <Link className={ location.pathname =='/bridge' ? classes.menu_link_active : classes.menu_link} exact to="/bridge">
           <div className={classes.menu_text} >{t("Bridge")}</div>
         </Link>
+        <Link className={ location.pathname =='/faq' ? classes.menu_link_active : classes.menu_link} exact to="/faq">
+          <div className={classes.menu_text} >{t("Faq")}</div>
+        </Link>
       </div>
       <div className={burgButton ? classes.open_burger_menu : classes.burger_menu} >
         <div className={classes.wallet}>
@@ -288,15 +303,15 @@ const Header = (props) => {
       </div>
     </div>
   
-  <div className={classes.smallline}>
+  <div className={ isConnected ? classes.smallline : classes.hiden}>
     <img src={ knownchain } alt="" height="24" width="24"  />
     <span className={classes.delimiter}> </span>
-    {t("Available TRX Balance")}: <span  className={classes.smallt}>{ formatNumber(accountInfo.balance) }</span>TRX <span className={classes.delimiter}> | </span>
+    {t("Available " + basetoken +" Balance")}: <span  className={classes.smallt}>{ formatNumber(accountInfo.balance) }</span>{basetoken} <span className={classes.delimiter}> | </span>
     {t("Farmotron FTT")}: <span className={classes.smallt}>{ formatNumber(accountInfo.staked) }</span>  <span className={classes.delimiter}> | </span>
     {t("Staked")}: <span className={classes.smallt}>{ formatNumber(accountInfo.staked * accountInfo.price) }</span>TRX
     
     { 
-      isConnected && chainid && Config.testnet
+      isConnected && chainid && Config.testnet && Config.faucetId.includes(chainid)
       ? <div className={classes.mint_link} onClick={()=>minttoken()}>{t("Get 2000 Test TRX")}</div>
       : <></>
     }

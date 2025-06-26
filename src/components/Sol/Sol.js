@@ -431,6 +431,91 @@ const useStyles = makeStyles((theme) => ({
 
 const Sol = (props) => {
   const classes = useStyles();
+  const { modal,isSolConnected,defaultAccount,inProcess,activeItem,accountInfo,infoenergy, emptyInfo } = useSelector(getData);
+  const navigate = useHistory();
+  const [state, setState] = useState("new");
+  const [btnTXT, setBtnTXT] = useState("CONFIRM");
+  const [stakeBtnTXT, setStakeBtnTXT] = useState("Opening Soon");
+  const [amount, setAmount] = useState(0);
+  const [withdrawamount, setWithdrawamount] = useState(0);
+  const [withdrawTRXamount, setWithdrawTRXamount] = useState(0);
+  const [vnrgMsg, setVnrgMsg] = useState("");
+  const [bscInfo, setBscInfo] = useState(emptyInfo);
+
+  const changeState = (newstate) => {
+    if (isSolConnected) {
+        setState(newstate)
+    } else toast.error("Connect Wallet."); 
+  }
+
+  useEffect(() => {
+    if (isSolConnected) {
+      setBscInfo(accountInfo)
+      setStakeBtnTXT('STAKE')
+    } else {
+      setBscInfo(emptyInfo)
+      setStakeBtnTXT('Connecting...')
+    }
+  }, [accountInfo, isSolConnected])
+
+  useEffect(() => {
+    setAmount(bscInfo.balance);
+  }, [bscInfo.balance])
+
+  useEffect(() => {
+    setWithdrawamount(bscInfo.staked);
+    setWithdrawTRXamount(bscInfo.staked * bscInfo.price);
+  }, [bscInfo.staked])
+
+  const confirmStake = async () => {
+    if (!inProcess) {
+      if (amount == 0) {
+        toast.error("INSUFFICIENT BALANCE"); 
+      } else {
+        setBtnTXT("Sending ...")
+        await stakeSOL(amount);
+        setBtnTXT("CONFIRM")
+        setState("new")
+      }
+    }
+  }
+
+  const confirmWithdraw = async () => {
+    if (!inProcess) {
+      setBtnTXT("Sending ...")
+      await withdrawSOL();
+      setBtnTXT("CONFIRM")
+      setState("new")
+    }
+  }
+
+  const confirmUnstake = async () => {
+    if (!inProcess) {
+      setBtnTXT("Sending ...")
+      await unstakeSOL(withdrawamount);
+      setBtnTXT("CONFIRM")
+      setState("new")
+    }
+  }
+  
+  const changeAmount = () => async (event) => {
+    var value = event.target.value
+    setAmount(value);
+  };
+  
+  const changeWithdrawTRXamount = () => async (event) => {
+    var value = event.target.value
+    setWithdrawTRXamount(value);
+    if (bscInfo.price > 0) {
+      var setam = value / bscInfo.price;
+      if (setam > bscInfo.staked) {
+        setam = bscInfo.staked
+      }
+      setWithdrawamount(setam);
+    } else {
+      setWithdrawamount(0);
+    }
+  };
   
   return (
     <div className={classes.root}>
@@ -451,12 +536,12 @@ const Sol = (props) => {
               </div>
               <div className={classes.infobox}>
                 <div className={classes.block}>
-                  <p className={classes.smitem}>{t("TVL")}</p>
+                  <p className={classes.smitem}>{t("Staked")}</p>
                   <p className={classes.bitem}>{ formatNumber(bscInfo.tvl * bscInfo.price) }<span className={classes.smritem}>TRX</span></p>
                 </div>
                 <div className={classes.block}>
                   <p className={classes.smitem}>{t("Rewards")}</p>
-                  <p className={classes.bitem}>{ formatNumber( (bscInfo.tvl * bscInfo.price) - bscInfo.tvl ) }<span className={classes.smritem}>TRX</span></p>
+                  <p className={classes.bitem}>{ formatNumber( (bscInfo.rewards) ) }<span className={classes.smritem}>TRX</span></p>
                 </div>
               </div>
             </div>          

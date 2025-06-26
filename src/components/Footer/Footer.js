@@ -122,7 +122,7 @@ const Footer = (props) => {
           <a href="mailto:info@farmotron.com?subject=Contact to Farmotron.com" className={classes.link_content}>info@farmotron.com</a>
           <div className={classes.sns_content}>
 
-            <a href="https://twitter.com/farmotron" target="_blank"><img width="24" height="24" src="/img/x.webp"/></a>
+            <a href="https://x.com/Farmotron1" target="_blank"><img width="24" height="24" src="/img/x.webp"/></a>
             <a href="https://github.com/farmotron" target="_blank"><img width="24" height="24" src="/img/github.png"/></a>
             <a href="https://t.me/farmotron" target="_blank"><img width="24" height="24" src="/img/tg.png"/></a>
 

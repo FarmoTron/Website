@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { withRouter, Link, useHistory } from 'react-router-dom';
 import { makeStyles } from '@mui/styles';
 import { Button,TextField,Switch } from "@mui/material";
-import { setStore, t, stakeBSCTRX, withdrawBSCTRX, unstakeBSCTRX } from "../../utils/utils";
+import { setStore, t, stakeBSCTRX, withdrawBSCTRX, unstakeBSCTRX, connect, changeChainId, checkId} from "../../utils/utils";
 
 import { toast } from 'react-toastify';
 import { getData } from "../../store/appStoreSlice";
@@ -115,6 +115,152 @@ const useStyles = makeStyles((theme) => ({
 
     fontWeight: "700",
 
+  },
+  mitem: {
+    justifyContent: "center",
+    alignItems: "center",
+    display: "flex",
+    flexDirection: "column",
+    fontSize: "14px",
+
+    fontWeight: "700",
+
+
+  },
+  ritem: {
+    fontSize: "14px",
+    fontWeight: "700",
+    textAlign:"right",
+  },  
+  linebutton: {
+    borderRadius: "5px",
+    display: "flex",
+    background: "rgba(254, 44, 44, 0.31)",
+    justifyContent: "center",
+    alignItems: "center",
+    lineHeight: "37px",
+    textAlign: "center",
+    margin: "8px 12px",
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#FFF",
+  },
+  disabledbutton: {
+    borderRadius: "5px",
+    display: "flex",
+    background: "rgba(138, 123, 123, 0.34)",
+    justifyContent: "center",
+    alignItems: "center",
+    lineHeight: "37px",
+    textAlign: "center",
+    marginTop:  "14px",
+    fontSize: "12px",
+    color: "#FFF",
+    fontWeight: "400",
+    width:"124px",
+    cursor:"pointer",
+    "@media (max-width: 767.98px)": {
+      width: "100%",
+    },
+  },
+  box: {
+    display: "flex",
+    flexDirection:"column",
+    height: "100vh",
+    overflowY: "auto",
+  },
+  infobox: {
+    display: "flex",
+    flexDirection:"row",
+    height: "0px",
+    overflow: "visible",
+    paddingLeft: "8px",
+    paddingRight: "8px",
+    "@media (max-width: 767.98px)": {
+      height: "auto",
+    },
+  },
+  
+  infoboxflex: {
+    display: "flex",
+    flexDirection:"row",
+    height: "0px",
+    overflow: "visible",
+    paddingLeft: "8px",
+    paddingRight: "8px",
+    justifyContent: "space-between",
+    "@media (max-width: 767.98px)": {
+      height: "auto",
+    },
+  },
+  left: {
+    flexDirection: "column",
+    width: "430px",
+    display: "flex",
+  },
+  container: {
+    borderRadius: "40px",
+    background: "rgba(255, 255, 255, 0.08)",
+    border: "2px solid rgba(255, 255, 255, 0.12)",
+    margin: "12px",
+    padding: "12px",
+  },
+  smitem: {
+    fontWeight: "normal",
+    fontSize: "9px",
+    lineHeight: "14px",
+    margin: "0",
+    fontWeight: "400",
+  },
+  smitemclick: {
+    fontWeight: "normal",
+    fontSize: "9px",
+    lineHeight: "14px",
+    margin: "0",
+    fontWeight: "400",
+    cursor:"pointer",
+  },
+  bitem: {
+    fontSize: "14px",
+    lineHeight: "14px",
+    margin: "0",
+    fontWeight: "700",
+  },
+  smritem: {
+    fontWeight: "normal",
+    fontSize: "10px",
+    lineHeight: "14px",
+    margin: "0",
+    textAlign: "right",
+    fontWeight: "400",
+  },
+  right: {
+    width: "100%",
+  },
+  menu_link: {
+    fontWeight: 500,
+    fontSize: "18px",
+    lineHeight: "30px",
+    color: "#FFF",
+    textDecoration: "none",
+    cursor: "pointer",
+    padding: "12px",
+    alignItems: "center",
+    display: "flex",
+  },
+  menu_link_active: {
+    fontWeight: 500,
+    fontSize: "18px",
+    lineHeight: "30px",
+    color: "#FFF",
+    textDecoration: "none",
+    cursor: "pointer",
+    padding: "12px",
+    alignItems: "center",
+    display: "flex",
+    borderRadius: "16px",
+    background: "linear-gradient(164deg, #BEAE1F 13.54%, #950404 43.23%, #951E04 68.86%, #CD9402 97.92%)",
+    
   },
   menu_text: {
 
@@ -284,7 +430,115 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const Eth = (props) => {
+  const tredots = <><span className="loader__dot">.</span><span className="loader__dot">.</span><span className="loader__dot">.</span></>
   const classes = useStyles();
+  const { modal,isConnected,defaultAccount,accountInfo,chainid,inProcess,emptyInfo,latestinfo } = useSelector(getData);
+  const navigate = useHistory();
+  const [state, setState] = useState("new");
+  const [btnTXT, setBtnTXT] = useState("CONFIRM");
+  const [stakeBtnTXT, setStakeBtnTXT] = useState("Connect Wallet");
+  const [amount, setAmount] = useState(0);
+  const [withdrawamount, setWithdrawamount] = useState(0);
+  const [withdrawTRXamount, setWithdrawTRXamount] = useState(0);
+  const [vnrgMsg, setVnrgMsg] = useState("");
+  const [apy, setApy] = useState(tredots);
+  const [tvl, setTvl] = useState(tredots);
+  const [bscInfo, setBscInfo] = useState(emptyInfo);
+
+  const changeState = (newstate) => {
+    if (isConnected && chainid) {
+      if (( (Config.testnet && chainid == 11155111) || (!Config.testnet && chainid == 1) )) {
+        setState(newstate)
+      } else if (Config.testnet && Config.allovedTestId.includes(11155111)) {
+        changeChainId(11155111)
+      } else if (!Config.testnet && Config.allovedId.includes(1)) {
+        changeChainId(1)
+      }
+    } else {
+      toast.error("Connect Wallet.");
+      connect();
+    }
+  }
+
+  useEffect(() => {
+    if (chainid) {
+      if (checkId() && ( (Config.testnet && chainid == 11155111) || (!Config.testnet && chainid == 1) )) {
+        setBscInfo(accountInfo)
+        setStakeBtnTXT('STAKE')
+      } else {
+        setBscInfo(emptyInfo)
+        if (Config.testnet && Config.allovedTestId.includes(11155111)) { setStakeBtnTXT('Change network') }
+        else if (!Config.testnet && Config.allovedId.includes(1)) { setStakeBtnTXT('Change network') }
+        else {setStakeBtnTXT('Opening Soon')}
+      }
+    }
+  }, [accountInfo, chainid])
+
+  useEffect(() => {
+    setAmount(bscInfo.balance);
+  }, [bscInfo.balance])
+  
+  useEffect(() => {
+    if (latestinfo) {
+      setApy(latestinfo.eth.apy);
+      setTvl(latestinfo.eth.trxtvl);
+    }
+  }, [latestinfo])
+
+  useEffect(() => {
+    setWithdrawamount(bscInfo.staked);
+    setWithdrawTRXamount(bscInfo.staked * bscInfo.price);
+  }, [bscInfo.staked])
+
+  const confirmStake = async () => {
+    if (!inProcess) {
+      if (amount == 0) {
+        toast.error("INSUFFICIENT BALANCE"); 
+      } else {
+        setBtnTXT("Sending ...")
+        await stakeBSCTRX(amount);
+        setBtnTXT("CONFIRM")
+        setState("new")
+      }
+    }
+  }
+
+  const confirmWithdraw = async () => {
+    if (!inProcess) {
+      setBtnTXT("Sending ...")
+      await withdrawBSCTRX();
+      setBtnTXT("CONFIRM")
+      setState("new")
+    }
+  }
+
+  const confirmUnstake = async () => {
+    if (!inProcess) {
+      setBtnTXT("Sending ...")
+      await unstakeBSCTRX(withdrawamount);
+      setBtnTXT("CONFIRM")
+      setState("new")
+    }
+  }
+  
+  const changeAmount = () => async (event) => {
+    var value = event.target.value
+    setAmount(value);
+  };
+  
+  const changeWithdrawTRXamount = () => async (event) => {
+    var value = event.target.value
+    setWithdrawTRXamount(value);
+    if (bscInfo.price > 0) {
+      var setam = value / bscInfo.price;
+      if (setam > bscInfo.staked) {
+        setam = bscInfo.staked
+      }
+      setWithdrawamount(setam);
+    } else {
+      setWithdrawamount(0);
+    }
+  };
   
   return (
     <div className={classes.root}>
@@ -300,17 +554,17 @@ const Eth = (props) => {
                 </div>
                 <div className={classes.block}>
                   <p className={classes.smitem}>{t("APY")}</p>
-                  <p className={classes.bitem}>{ formatNumber(bscInfo.apy) }<span className={classes.smritem}>%</span></p>
+                  <p className={classes.bitem}>{ apy }<span className={classes.smritem}>%</span></p>
                 </div>
               </div>
               <div className={classes.infobox}>
                 <div className={classes.block}>
-                  <p className={classes.smitem}>{t("TVL")}</p>
-                  <p className={classes.bitem}>{ formatNumber(bscInfo.tvl * bscInfo.price) }<span className={classes.smritem}>TRX</span></p>
+                  <p className={classes.smitem}>{t("Staked")}</p>
+                  <p className={classes.bitem}>{ formatNumber(accountInfo.staked * accountInfo.price) }<span className={classes.smritem}>TRX</span></p>
                 </div>
                 <div className={classes.block}>
                   <p className={classes.smitem}>{t("Rewards")}</p>
-                  <p className={classes.bitem}>{ formatNumber( (bscInfo.tvl * bscInfo.price) - bscInfo.tvl ) }<span className={classes.smritem}>TRX</span></p>
+                  <p className={classes.bitem}>{ formatNumber(bscInfo.rewards) }<span className={classes.smritem}>TRX</span></p>
                 </div>
               </div>
             </div>          
@@ -323,8 +577,8 @@ const Eth = (props) => {
                 <div className={ state=='new' ? classes.block : classes.block_flex }>
                   <img src="/img/tron.png" alt="TRX"  className={state=='new' ? classes.bigimg : classes.smallimg} />
                   <div className={ classes.tvlblock }>
-                    <div className={ classes.title }>{ formatNumber(bscInfo.apy) }% APY </div>
-                    <div className={ classes.title }>{ formatNumber(bscInfo.tvl * bscInfo.price) }<span className={ classes.smritem }>TRX</span> TVL </div>
+                    <div className={ classes.title }>{ apy }% APY </div>
+                    <div className={ classes.title }>{ tvl }<span className={ classes.smritem }>TRX</span> TVL </div>
                   </div>
                 </div>
                 <div className={ state=='stake' ? classes.block : classes.hidden }>
@@ -346,23 +600,22 @@ const Eth = (props) => {
                 <div className={ state=='withdraw' ? classes.block : classes.hidden }>
                   {bscInfo.withdrawable} TRX
                 </div>
-                <div className={ state=='unstake' ? classes.block : classes.hidden }>
+                <div className={  state=='unstake' ? classes.block : classes.hidden  }>
                   <TextField 
-                    id="withdrawamount" 
+                    id="withdrawTRXamount" 
                     label={t("TRX amount")}
                     type="number" 
                     variant="standard"
                     error={vnrgMsg != ""}
                     helperText={vnrgMsg}
-                    onChange={changeWithdrawamount()}
-                    value={withdrawamount}
+                    onChange={changeWithdrawTRXamount()}
+                    value={withdrawTRXamount}
                     classes={{root: classes.textField_root}}
                     InputLabelProps={{classes: {root: classes.textField}}}
                     InputProps={{classes: {underline: classes.textField}}}
                   />            
 
                 </div>
-
               </div>
 
               
@@ -392,7 +645,7 @@ const Eth = (props) => {
                   <div className={ inProcess ? classes.disabled_button : classes.start_button } onClick={()=>changeState("withdraw")}>WITHDRAW</div>
                 </>
               }
-              { state == 'new' && (bscInfo.staked - bscInfo.ready) > 0 && bscInfo.staked > 0 && 
+              { state == 'new' && bscInfo.staked > 0 && 
                 <>
                   <div className={ inProcess ? classes.disabled_button : classes.start_button } onClick={()=>changeState("unstake")}>UNSTAKE</div>
                 </>

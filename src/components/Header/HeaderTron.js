@@ -6,7 +6,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import SearchIcon from '@mui/icons-material/Search';
 import { getData } from "../../store/appStoreSlice";
 import { useSelector } from "react-redux";
-import { t, setStore, connect, minimize, mintSOL, connectSOL } from "../../utils/utils";
+import { t, setStore, minimize, initTronLinkWallet } from "../../utils/utils";
 import { formatNumber } from '../../utils/helper';
 
 import _ from "lodash";
@@ -219,10 +219,10 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const HeaderSol = (props) => {
+const HeaderTron = (props) => {
   const classes = useStyles();
   const location = useLocation();
-  const { isSolConnected, defaultAccount, accountInfo } = useSelector(getData);
+  const { isTronConnected, defaultAccount, accountInfo } = useSelector(getData);
   const [burgButton, setBurgButton] = useState(false);
   const [knownchain, setKnownchain] = useState('/img/empty.png');
 
@@ -231,9 +231,7 @@ const HeaderSol = (props) => {
     setBurgButton(false);
   }
   
-  const minttoken = () => {
-      mintSOL();
-  }
+
 
   
   
@@ -243,12 +241,12 @@ const HeaderSol = (props) => {
   
   
   useEffect(() => {
-    if (isSolConnected) {
-      setKnownchain('/img/networks/solana.png')
+    if (isTronConnected) {
+      setKnownchain('/img/networks/tron.png')
     } else {
       setKnownchain('/img/empty.png')
     }
-  }, [isSolConnected]);
+  }, [isTronConnected]);
   
   return (
   <div className={classes.firstroot}>
@@ -275,8 +273,8 @@ const HeaderSol = (props) => {
       <div className={burgButton ? classes.open_burger_menu : classes.burger_menu} >
         <div className={classes.wallet}>
           { 
-            !isSolConnected 
-            ? <div className={classes.wallet_link} onClick={()=>connectSOL()}><img width="24" height="24" src="/img/connect.png"/> {t("Connect SOL Wallet")}</div>
+            !isTronConnected 
+            ? <div className={classes.wallet_link} onClick={()=>initTronLinkWallet()}><img width="24" height="24" src="/img/connect.png"/> {t("Connect Tron Wallet")}</div>
             : <div className={classes.connected_wallet_link}>
                 <div className={classes.line}>
                   <img src={ knownchain } alt="" height="24" width="24"  />
@@ -289,16 +287,16 @@ const HeaderSol = (props) => {
       </div>
     </div>
   
-  <div  className={ isSolConnected ? classes.smallline : classes.hiden}>
+  <div  className={ isTronConnected ? classes.smallline : classes.hiden}>
     <img src={ knownchain } alt="" height="24" width="24"  />
     <span className={classes.delimiter}> </span>
-    {t("Available SOL Balance")}: <span  className={classes.smallt}>{ formatNumber(accountInfo.balance) }</span>SOL <span className={classes.delimiter}> | </span>
+    {t("Available TRX Balance")}: <span  className={classes.smallt}>{ formatNumber(accountInfo.balance) }</span>TRX <span className={classes.delimiter}> | </span>
     {t("Farmotron FTT")}: <span className={classes.smallt}>{ formatNumber(accountInfo.staked) }</span>  <span className={classes.delimiter}> | </span>
     {t("Staked")}: <span className={classes.smallt}>{ formatNumber(accountInfo.staked * accountInfo.price) }</span>TRX
     
     { 
-      isSolConnected && Config.testnet
-      ? <div className={classes.mint_link} onClick={()=>minttoken()}>{t("Get 5 Test SOL")}</div>
+      isTronConnected && Config.testnet
+      ? <a className={classes.mint_link} href="https://nileex.io/join/getJoinPage" target="_blank">{t("Get 2000 Test TRX")}</a>
       : <></>
     }
   </div>
@@ -307,4 +305,4 @@ const HeaderSol = (props) => {
   );
 }
 
-export default HeaderSol;
+export default HeaderTron;

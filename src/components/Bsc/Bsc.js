@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { withRouter, Link, useHistory } from 'react-router-dom';
 import { makeStyles } from '@mui/styles';
 import { Button,TextField,Switch } from "@mui/material";
-import { setStore, t, stakeBSCTRX, withdrawBSCTRX, unstakeBSCTRX } from "../../utils/utils";
+import { setStore, t, stakeBSCTRX, withdrawBSCTRX, unstakeBSCTRX, connect, changeChainId, checkId} from "../../utils/utils";
 
 import { toast } from 'react-toastify';
 import { getData } from "../../store/appStoreSlice";
@@ -430,7 +430,171 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const Bsc = (props) => {
+  const tredots = <><span className="loader__dot">.</span><span className="loader__dot">.</span><span className="loader__dot">.</span></>
   const classes = useStyles();
+  const { modal,isConnected,defaultAccount,accountInfo,chainid,inProcess,emptyInfo,latestinfo } = useSelector(getData);
+  const navigate = useHistory();
+  const [state, setState] = useState("new");
+  const [btnTXT, setBtnTXT] = useState("CONFIRM");
+  const [stakeBtnTXT, setStakeBtnTXT] = useState("Connect Wallet");
+  const [amount, setAmount] = useState(0);
+  const [withdrawamount, setWithdrawamount] = useState(0);
+  const [withdrawTRXamount, setWithdrawTRXamount] = useState(0);
+  const [vnrgMsg, setVnrgMsg] = useState("");
+  const [apy, setApy] = useState(tredots);
+  const [tvl, setTvl] = useState(tredots);
+  const [bscInfo, setBscInfo] = useState(emptyInfo);
+
+  const changeState = (newstate) => {
+    if (isConnected && chainid) {
+      if (( (Config.testnet && chainid == 97) || (!Config.testnet && chainid == 56) )) {
+        setState(newstate)
+      } else if (Config.testnet && Config.allovedTestId.includes(97)) {
+        changeChainId(97)
+      } else if (!Config.testnet && Config.allovedId.includes(56)) {
+        changeChainId(56)
+      }
+    } else {
+      toast.error("Connect Wallet.");
+      connect();
+    }
+  }
+
+  useEffect(() => {
+    if (chainid) {
+      if (checkId() && ( (Config.testnet && chainid == 97) || (!Config.testnet && chainid == 56) )) {
+        setBscInfo(accountInfo)
+        setStakeBtnTXT('STAKE')
+      } else {
+        setBscInfo(emptyInfo)
+        if (Config.testnet && Config.allovedTestId.includes(97)) { setStakeBtnTXT('Change network') }
+        else if (!Config.testnet && Config.allovedId.includes(56)) { setStakeBtnTXT('Change network') }
+        else {setStakeBtnTXT('Opening Soon')}
+      }
+    }
+  }, [accountInfo, chainid])
+
+  useEffect(() => {
+    setAmount(bscInfo.balance);
+  }, [bscInfo.balance])
+  
+  useEffect(() => {
+    if (latestinfo) {
+      setApy(latestinfo.bsc.apy);
+      setTvl(latestinfo.bsc.trxtvl);
+    }
+  }, [latestinfo])
+
+  useEffect(() => {
+    setWithdrawamount(bscInfo.staked);
+    setWithdrawTRXamount(bscInfo.staked * bscInfo.price);
+  }, [bscInfo.staked])
+
+  const confirmStake = async () => {
+    if (!inProcess) {
+      if (amount == 0) {
+        toast.error("INSUFFICIENT BALANCE"); 
+      } else {
+        setBtnTXT("Sending ...")
+        await stakeBSCTRX(amount);
+        setBtnTXT("CONFIRM")
+        setState("new")
+      }
+    }
+  }
+
+  const confirmWithdraw = async () => {
+    if (!inProcess) {
+      setBtnTXT("Sending ...")
+      await withdrawBSCTRX();
+      setBtnTXT("CONFIRM")
+      setState("new")
+    }
+  }
+
+  const confirmUnstake = async () => {
+    if (!inProcess) {
+      setBtnTXT("Sending ...")
+      await unstakeBSCTRX(withdrawamount);
+      setBtnTXT("CONFIRM")
+      setState("new")
+    }
+  }
+  
+  const changeAmount = () => async (event) => {
+    var value = event.target.value
+    setAmount(value);
+  };
+  
+  const changeWithdrawTRXamount = () => async (event) => {
+    var value = event.target.value
+    setWithdrawTRXamount(value);
+    if (bscInfo.price > 0) {
+      var setam = value / bscInfo.price;
+      if (setam > bscInfo.staked) {
+        setam = bscInfo.staked
+      }
+      setWithdrawamount(setam);
+    } else {
+      setWithdrawamount(0);
+    }
+  };
+  
+  return (
+    <div className={classes.root}>
+
+      <div className={classes.right}>
+        <div className={classes.container}>
+          <div className={classes.headerblok}>
+            <div className={classes.infoboxflex}>
+              <div className={classes.infobox}>
+                <div className={classes.block}>
+                  <p className={classes.smitem}>{t("Pools")}</p>
+                  <p className={classes.bitem}>1</p>
+                </div>
+                <div className={classes.block}>
+                  <p className={classes.smitem}>{t("APY")}</p>
+                  <p className={classes.bitem}>{ apy }<span className={classes.smritem}>%</span></p>
+                </div>
+              </div>
+              <div className={classes.infobox}>
+                <div className={classes.block}>
+                  <p className={classes.smitem}>{t("Staked")}</p>
+                  <p className={classes.bitem}>{ formatNumber(accountInfo.staked * accountInfo.price) }<span className={classes.smritem}>TRX</span></p>
+                </div>
+                <div className={classes.block}>
+                  <p className={classes.smitem}>{t("Rewards")}</p>
+                  <p className={classes.bitem}>{ formatNumber(bscInfo.rewards) }<span className={classes.smritem}>TRX</span></p>
+                </div>
+              </div>
+            </div>          
+            <h1 className={classes.titlebox}>{t("Pools")}</h1>
+            
+            <div className={ classes.filledbox }>
+              <div className={ classes.title } >BEP-20 TRX Pool (BSC)</div>
+              <div className={ classes.smritem }>Stake your TRX and get rewards</div>
+              <div className={ classes.innerblock }>
+                <div className={ state=='new' ? classes.block : classes.block_flex }>
+                  <img src="/img/transtron.png" alt="TRX"  className={state=='new' ? classes.bigimg : classes.smallimg} />
+                  <div className={ classes.tvlblock }>
+                    <div className={ classes.title }>{ apy }% APY </div>
+                    <div className={ classes.title }>{ tvl }<span className={ classes.smritem }>TRX</span> TVL </div>
+                  </div>
+                </div>
+                <div className={ state=='stake' ? classes.block : classes.hidden }>
+                  <TextField 
+                    id="amount" 
+                    label={t("TRX amount")}
+                    type="number" 
+                    variant="standard"
+                    error={vnrgMsg != ""}
+                    helperText={vnrgMsg}
+                    onChange={changeAmount()}
+                    value={amount}
+                    classes={{root: classes.textField_root}}
+                    InputLabelProps={{classes: {root: classes.textField}}}
+                    InputProps={{classes: {underline: classes.textField}}}
+                  />            
 
                 </div>
                 <div className={ state=='withdraw' ? classes.block : classes.hidden }>
